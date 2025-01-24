@@ -22,6 +22,7 @@ data tiltReadings;
 bool begin_imu(void);
 axis getAcceleration(void);
 data getTilt(void);
+void printData(void);
 
 // Function to initialize the IMU sensor
 bool begin_imu() {
@@ -54,4 +55,15 @@ data getTilt() {
   }
 
   return tiltReadings;
+}
+
+void printData(){
+  Serial.print("Time (s): ");
+  Serial.print(millis() / 1000.0, 3);
+  Serial.print(" | Tilt X: ");
+  Serial.print(tiltReadings.tiltX, 2);
+  Serial.print(" | Tilt Y: ");
+  Serial.print(tiltReadings.tiltY, 2);
+  Serial.print(" | Status: ");
+  Serial.println(tiltReadings.status);
 }
