@@ -50,9 +50,9 @@ void loop() {
 
   delay(500);
 
-  /*count++;
-  if (count >= 10) {
+  count++;
+  if (count >= 10000) {
     Serial.println("Finalizing the data storage process.");
     while (1);
-  }*/
+  }
 }

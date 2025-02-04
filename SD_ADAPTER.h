@@ -12,7 +12,12 @@ bool fileExists(void);
 
 // Function to initialize the SD card
 bool begin_sd() {
-  const int chipSelect = 4;  // Define the CS (chip select) pin
+  const int chipSelect = 10;  // Define the CS (chip select) pin
+
+  // Configura o pino SS (D10) como saída, mesmo que não seja usado
+  pinMode(10, OUTPUT);
+
+  // Inicializa o cartão SD
   if (!SD.begin(chipSelect)) {
     Serial.println("SD card initialization failed!");
     return false;
@@ -22,7 +27,7 @@ bool begin_sd() {
 }
 
 // Function to write data to the CSV file
-void writeData(float x, float y, const char status[10]) {
+void writeData(float x, float y, const char status[4]) {
   File dataFile = SD.open(filename, FILE_WRITE);
   if (dataFile) {
     dataFile.print(millis() / 1000.0, 3);  // Time in seconds

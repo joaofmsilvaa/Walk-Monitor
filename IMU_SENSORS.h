@@ -11,7 +11,7 @@ typedef struct {
 typedef struct {
   float tiltX;
   float tiltY;
-  char status[10];  // Fixed array to store "Good" or "Bad"
+  char status[4];  // Fixed array to store "Good" or "Bad"
 } data;
 
 // Global variables to hold sensor readings
