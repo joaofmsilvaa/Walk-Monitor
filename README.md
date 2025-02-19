@@ -86,8 +86,9 @@ When the system is running correctly, you should see output similar to:
 Initializing system...
 SD card initialized successfully!
 IMU initialized successfully!
-Time (s): 1.50 | Tilt X: 10.25 | Tilt Y: 78.50 | Status: Good
-Time (s): 2.00 | Tilt X: 15.30 | Tilt Y: 85.20 | Status: Bad
+Time,Ax,Ay,Az,Gx,Gy,Gz,TiltX,TiltY,OmegaTotal
+26.251,-5.85,0.22,-0.50,0.97,0.02,0.18,-4.78,1.76,0.99
+27.048,1.40,-1.45,-2.90,0.98,-0.01,0.21,-3.85,1.34,3.45
 ...
 ```
 
