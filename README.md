@@ -32,9 +32,9 @@ Follow these steps to wire the components:
 #### **Micro SD Card Adapter to Arduino Nano 33 BLE Sense**
 | SD Adapter Pin | Arduino Pin |
 |----------------|-------------|
-| VCC            | 3.3V         |
+| VCC            | 5V         |
 | GND            | GND          |
-| CS             | D4           |
+| CS             | D10           |
 | MOSI           | D11 (MOSI)    |
 | MISO           | D12 (MISO)    |
 | SCK            | D13 (SCK)     |
