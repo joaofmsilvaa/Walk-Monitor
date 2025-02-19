@@ -1,7 +1,8 @@
 #include "Arduino_BMI270_BMM150.h"
 #include <Arduino.h>
+#include <math.h>
 
-// Structures to store axis readings and tilt data
+// Structures to store sensor readings and orientation data
 typedef struct {
   float x;
   float y;
@@ -9,61 +10,90 @@ typedef struct {
 } axis;
 
 typedef struct {
+  float x;
+  float y;
+  float z;
+  float omega_total;
+} gyro_data;
+
+typedef struct {
   float tiltX;
   float tiltY;
-  char status[4];  // Fixed array to store "Good" or "Bad"
 } data;
 
 // Global variables to hold sensor readings
-axis axisReadings;
+axis accelReadings;
+gyro_data gyroReadings;
 data tiltReadings;
+
+// Auxiliary variables for sensor fusion
+float angleX = 0, angleY = 0;  // Filtered tilt angles
+float dt = 0.02;               // Estimated time interval (20ms)
+unsigned long lastTime = 0;
 
 // Function prototypes
 bool begin_imu(void);
-axis getAcceleration(void);
+void getIMUData(void);
 data getTilt(void);
-void printData(void);
+void complementaryFilter(void);
 
-// Function to initialize the IMU sensor
+// Initialize the IMU sensor
 bool begin_imu() {
   if (!IMU.begin()) {
     Serial.println("Failed to initialize IMU!");
     return false;
   }
-  Serial.println("IMU initialized successfully!");
+  Serial.println("IMU successfully initialized!");
   return true;
 }
 
-// Function to get acceleration readings from X, Y, and Z axes
-axis getAcceleration() {
+// Read data from the accelerometer and gyroscope
+void getIMUData() {
   if (IMU.accelerationAvailable()) {
-    IMU.readAcceleration(axisReadings.x, axisReadings.y, axisReadings.z);
+    IMU.readAcceleration(accelReadings.x, accelReadings.y, accelReadings.z);
   }
-  return axisReadings;
+  
+  if (IMU.gyroscopeAvailable()) {
+    IMU.readGyroscope(gyroReadings.x, gyroReadings.y, gyroReadings.z);
+  }
 }
 
-// Function to calculate tilt angles and determine posture status
-data getTilt() {
-  // Calculate the tilt angles (pitch) for the X and Y axes
-  tiltReadings.tiltX = atan2(axisReadings.y, sqrt(axisReadings.x * axisReadings.x + axisReadings.z * axisReadings.z)) * 180 / PI;
-  tiltReadings.tiltY = atan2(axisReadings.x, sqrt(axisReadings.y * axisReadings.y + axisReadings.z * axisReadings.z)) * 180 / PI;
+// Apply the complementary filter to estimate tilt angles
+void complementaryFilter() {
+  unsigned long currentTime = millis();
+  dt = (currentTime - lastTime) / 1000.0; // Compute elapsed time in seconds
+  lastTime = currentTime;
 
-  // Determine posture status based on tilt angles
-  strcpy(tiltReadings.status, "Good");
-  if (abs(tiltReadings.tiltX) > 12. || tiltReadings.tiltY < 75. || tiltReadings.tiltY > 90.) {
-    strcpy(tiltReadings.status, "Bad");
-  }
+  // Calculate tilt angles from the accelerometer using trigonometry
+  float accelAngleX = atan2(accelReadings.y, sqrt(accelReadings.x * accelReadings.x + accelReadings.z * accelReadings.z)) * 180 / PI;
+  float accelAngleY = atan2(accelReadings.x, sqrt(accelReadings.y * accelReadings.y + accelReadings.z * accelReadings.z)) * 180 / PI;
+
+  // Integrate gyroscope data (convert to degrees per second)
+  float gyroRateX = gyroReadings.x * dt;
+  float gyroRateY = gyroReadings.y * dt;
+
+  // Apply the complementary filter
+  angleX = 0.98 * (angleX + gyroRateX) + 0.02 * accelAngleX;
+  angleY = 0.98 * (angleY + gyroRateY) + 0.02 * accelAngleY;
+}
+
+// Compute tilt and evaluate posture status
+data getTilt() {
+  complementaryFilter();
+  tiltReadings.tiltX = angleX;
+  tiltReadings.tiltY = angleY;
 
   return tiltReadings;
 }
 
-void printData(){
-  Serial.print("Time (s): ");
-  Serial.print(millis() / 1000.0, 3);
-  Serial.print(" | Tilt X: ");
-  Serial.print(tiltReadings.tiltX, 2);
-  Serial.print(" | Tilt Y: ");
-  Serial.print(tiltReadings.tiltY, 2);
-  Serial.print(" | Status: ");
-  Serial.println(tiltReadings.status);
+gyro_data getGyroscope() {
+  if (IMU.gyroscopeAvailable()) {
+    IMU.readGyroscope(gyroReadings.x, gyroReadings.y, gyroReadings.z);
+    
+    // Compute the magnitude of angular velocity
+    gyroReadings.omega_total = sqrt(gyroReadings.x * gyroReadings.x +
+                                    gyroReadings.y * gyroReadings.y +
+                                    gyroReadings.z * gyroReadings.z);
+  }
+  return gyroReadings;
 }

@@ -6,7 +6,7 @@ const char filename[] = "posture.csv";
 
 // Function prototypes
 bool begin_sd(void);
-void writeData(float x, float y, const char status[10]);
+void writeData(float ax, float ay, float az, float gx, float gy, float gz, float tiltX, float tiltY);
 void removeFile(void);
 bool fileExists(void);
 
@@ -14,35 +14,58 @@ bool fileExists(void);
 bool begin_sd() {
   const int chipSelect = 10;  // Define the CS (chip select) pin
 
-  // Configura o pino SS (D10) como saída, mesmo que não seja usado
-  pinMode(10, OUTPUT);
-
-  // Inicializa o cartão SD
+  // Initialize SD card
   if (!SD.begin(chipSelect)) {
     Serial.println("SD card initialization failed!");
     return false;
   }
   Serial.println("SD card initialized successfully!");
+
+  // Check if the file exists; if not, create it and add the header
+  if (!fileExists()) {
+    File dataFile = SD.open(filename, FILE_WRITE);
+    if (dataFile) {
+      dataFile.println("Time(s),Ax,Ay,Az,Gx,Gy,Gz,TiltX,TiltY,OmegaTotal");
+      dataFile.close();
+      Serial.println("CSV file created with header.");
+    } else {
+      Serial.println("Error creating CSV file!");
+      return false;
+    }
+  }
+
   return true;
 }
 
 // Function to write data to the CSV file
-void writeData(float x, float y, const char status[4]) {
+void writeData(float accX, float accY, float accZ, float gyroX, float gyroY, float gyroZ, float tiltX, float tiltY, float omega_total) {
   File dataFile = SD.open(filename, FILE_WRITE);
   if (dataFile) {
     dataFile.print(millis() / 1000.0, 3);  // Time in seconds
     dataFile.print(",");
-    dataFile.print(x, 2);
+    dataFile.print(gyroX, 2);
     dataFile.print(",");
-    dataFile.print(y, 2);
+    dataFile.print(gyroY, 2);
     dataFile.print(",");
-    dataFile.println(status);
+    dataFile.print(gyroZ, 2);
+    dataFile.print(",");
+    dataFile.print(accX, 2);
+    dataFile.print(",");
+    dataFile.print(accY, 2);
+    dataFile.print(",");
+    dataFile.print(accZ, 2);
+    dataFile.print(",");
+    dataFile.print(tiltX, 2);
+    dataFile.print(",");
+    dataFile.print(tiltY, 2);
+    dataFile.println(omega_total, 2);
     dataFile.close();
     Serial.println("Data successfully saved!");
   } else {
     Serial.println("Error writing to SD card!");
   }
 }
+
 
 // Function to remove the CSV file if it exists
 void removeFile() {
